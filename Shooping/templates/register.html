@@ -1,0 +1,22 @@
+<html>
+<head>
+<title>Registration</title>
+<link rel="stylesheet" href={{url_for('static', filename='css/login.css')}}>
+</head>
+<body>
+    <div class="login-page">
+        <div class="form">
+                <form class="register-form" action="/register" method="POST">
+                    <input type="email" name="email" placeholder="Email">
+                    <input type="password" name="password" placeholder="Password" id="password" required>
+                    <input type="text" name="name" placeholder="First Name">
+                    <input type="text" name="address" placeholder="Address">
+                    <input type="text" name="state" placeholder="State">
+                    <input type="text" name="phone" placeholder="Phone Number">
+                    <input type="submit" value="Register">
+                    <a href="/loginForm">Login here</a>
+                </form>
+            </div>
+    </div>
+</body>
+</html>

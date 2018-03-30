@@ -1,0 +1,115 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Your Cart</title>
+<link rel="stylesheet" href={{url_for('static', filename='css/cart.css')}} />
+<link rel="stylesheet" href={{url_for('static', filename='css/topStyle.css') }} />
+</head>
+<body>
+<div id="title">
+	<form>
+		<input id="searchBox" type="text" name="searchQuery">
+		<input id="searchButton" type="submit" value="Search">
+	</form>
+
+	{% if not loggedIn %}
+		<div id="signInButton">
+			<a class="link" href="/loginForm">Sign In</a>
+		</div>
+	{% else %}
+	<div class="dropdown">
+		<button class="dropbtn">Hello, <br>{{name}}</button>
+		<div class="dropdown-content">
+			<a href="/logout">Sign Out</a>
+		</div>
+	</div>
+	{% endif %}
+	<div id="kart">
+		<a class="link" href="/cart">
+		CART {{noOfItems}}
+		</a>
+	</div>
+</div>
+<div>
+	<form action="">
+  	<input type="radio" name="delivery" value="CreditCard/DebitCard" disabled> CreditCard/DebitCard<br>
+  	<input type="radio" name="delivery" value="NetBanking" disabled> NetBanking<br>
+  	<input type="radio" name="delivery" value="Cash On Delivery" checked> Cash On Delivery
+</form>
+</div>
+<div id="cartItems">
+	<h2>Shopping Cart</h2>
+	<div id="tableItems">
+		{% for x in counting %}
+		<div>
+			<div id="itemImage">
+				<img src="{{x[2]}}" id="image">
+			</div>
+				<span id="itemNameTag">{{x[1]}}</span><br>
+				Quantity : {{x[0]}}
+				<br>
+		</div>
+		<br>
+		{% endfor %}
+
+		<br>
+		{% for row in products %}
+		<div>
+			{% if row in counting %}
+			{% for x in counting %}
+			<div>
+				<div id="itemImage">
+					<img src="{{x[2]}}" id="image">
+				</div>
+				<span id="itemNameTag">{{x[1]}}</span><br>
+				Quantity : {{x[0]}}
+				<br>
+			</div>
+			{% endfor %}
+			{% else %}
+				<div id="itemImage">
+					<img src="{{row[3]}}" id="image">
+				</div>
+				<span id="itemNameTag">{{row[1]}}</span><br>
+				Quantity : 1
+			{% endif %}
+		</div>
+		{% endfor %}
+		<br>
+		<hr id="seperator">
+		<div id="total">
+			<strong><span id="subtotal">Subtotal</span> : ${{totalPrice*1.1}}</strong>
+		</div>
+	</div>
+</div>
+<br>
+<!-- <div id="display">
+			{% for line in data %}
+			 <div>
+			 	<h3>Shipping Details</h3>
+			 	<div id="uerid">
+			 	<strong>UserID</strong>: {{line[0]}}
+			 	<br>
+			 	<strong>email</strong> : {{line[2]}}
+			 	<br>
+			 	<strong>name</strong> : {{line[3]}}
+			 	<br>
+			 	<strong>address</strong> : {{line[4]}}
+			 	<br>
+				<strong>state</strong> : {{line[5]}}
+				<br>
+				<strong>phone</strong> : {{line[6]}}
+			 </div>
+			 </div>
+			 {% endfor %}
+		</div> -->
+		<div id="orders">
+			<a href="/placedorders"> Place order</a>
+		</div>
+</div>
+
+</body>
+</html>
+
+
+
