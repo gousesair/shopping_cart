@@ -55,22 +55,24 @@ db.create_all()
 
 class Kart(db.Model):
 	__tablename__='kart'
-	id = db.Column(db.Integer,primary_key=True)
-	userId = db.Column(db.Integer,db.ForeignKey('users.userId'))
+	email = db.Column(db.String(255),db.ForeignKey('users.email'),primary_key=True)
 	productId = db.Column(db.String(255),db.ForeignKey('products.productId'))
-	def __init__(self,userId,productId):
-		self.userId=userId
-		self.productId=productId
+	quantity = db.Column(db.Integer())
+	def __init__(self,email,productId,quantity):
+		self.email = email
+		self.productId = productId
+		self.quantity = quantity
 db.create_all()
 
 class Orders(db.Model):
 	__tablename__='orders'
-	id = db.Column(db.Integer,primary_key=True)
-	userId = db.Column(db.Integer,db.ForeignKey('users.userId'))
+	email = db.Column(db.String(255),db.ForeignKey('users.email'),primary_key=True)
 	productId = db.Column(db.String(255),db.ForeignKey('products.productId'))
-	def __init__(self,userId,productId):
-		self.userId=userId
-		self.productId=productId
+	quantity = db.Column(db.Integer())
+	def __init__(self,email,productId,quantity):
+		self.email = email
+		self.productId = productId
+		self.quantity = quantity
 db.create_all()
 
 def getLoginDetails():
@@ -80,9 +82,9 @@ def getLoginDetails():
 		noOfItems = 0
 	else:
 		loggedIn = True
-		stmt = "select userId,name from users where email='"+session['email']+"'"
+		stmt = "select email,name from users where email='"+session['email']+"'"
 		userId, name = db.engine.execute(stmt).fetchone()
-		stmt1 = "select count(productId) from kart where userId = " +str(userId)
+		stmt1 = "select count(productId) from kart where email = '" +str(userId) +"'"
 		noOfItems = db.engine.execute(stmt1).fetchone()[0]
 	return (loggedIn,name,noOfItems)
 
@@ -93,12 +95,12 @@ def root():
 	itemData = db.engine.execute(stmt).fetchall()
 	return render_template('home.html',itemData=itemData,loggedIn=loggedIn,name=name,noOfItems=noOfItems)
 
-@app.route("/account/profile")
-def profileHome():
-	if 'email' not in session:
-		return redirect(url_for('root'))
-	loggedIn,name,noOfItems = getLoginDetails()
-	return render_template("profileHome.html",loggedIn=loggedIn,name=name,noOfItems=noOfItems)
+# @app.route("/account/profile")
+# def profileHome():
+# 	if 'email' not in session:
+# 		return redirect(url_for('root'))
+# 	loggedIn,name,noOfItems = getLoginDetails()
+# 	return render_template("profileHome.html",loggedIn=loggedIn,name=name,noOfItems=noOfItems)
 @app.route("/loginForm")
 def loginForm():
 	if 'email' in session:
@@ -130,19 +132,28 @@ def addToCart():
 		return redirect(url_for('loginForm'))
 	else:
 		productId = str(request.args.get('productId'))
-		stmt = "SELECT userId FROM users WHERE email = '" + session['email'] + "'"
-		userId = db.engine.execute(stmt).fetchone()[0]
+		stmt = "SELECT email FROM users WHERE email = '" + session['email'] + "'"
+		email = db.engine.execute(stmt).fetchone()[0]
 		# stmt = 'SELECT count() FROM kart'
-		# count = db.engine.execute(stmt).fetchone()[0]
-		# try:
-		# 	if count < 4:
-		user = Kart(userId,productId)
-		db.session.add(user)
-		db.session.commit()
-		msg="Added successfully"
-		# except:
-		# 	db.session.rollback()
-		# 	msg = "Can't add more than 3 books"
+		try:
+			count = db.engine.execute("SELECT quantity FROM kart WHERE email ='"+str(session['email'])+"' AND productId="+str(productId)).fetchone()[0]
+			count+=1
+			if(count < 4):
+				try:
+					db.engine.execute("DELETE FROM kart WHERE email = '" + str(session['email']) + "' AND productId = " + str(productId))
+					user = Kart(email,productId,quantity)
+					db.session.add(user)
+					db.session.commit()
+					msg="Added successfully"
+				except:
+					db.session.rollback()
+					msg = "Can't add more than 3 books"
+		except:
+			quantity=1
+			user = Kart(email,productId,quantity)
+			db.session.add(user)
+			db.session.commit()
+			msg="Added successfully"
 	db.session.close()
 	return redirect(url_for('root'))
 @app.route("/cart")
@@ -151,23 +162,39 @@ def cart():
 		return redirect(url_for('loginForm'))
 	loggedIn,name,noOfItems = getLoginDetails()
 	email = session['email']
-	stmt = "SELECT userId FROM users WHERE email = '" + email + "'"
-	userId = db.engine.execute(stmt).fetchone()[0]
-	stmt1 = "SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.userId = " + str(userId)
+	stmt = "SELECT email FROM users WHERE email = '" + str(session['email']) + "'"
+	email = db.engine.execute(stmt).fetchone()[0]
+	stmt1 = 'SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.email = "' + session['email'] +'"'
 	products = db.engine.execute(stmt1).fetchall()
 	totalPrice = 0
 	for row in products:
 		totalPrice+=row[2]
 	return render_template("cart.html",products=products,totalPrice=totalPrice,loggedIn=loggedIn,name=name,noOfItems=noOfItems)
+
+@app.route("/orders")
+def orders():
+	if 'email' not in session:
+		return redirect(url_for('loginForm'))
+	loggedIn,name,noOfItems = getLoginDetails()
+	email = session['email']
+	stmt = "SELECT email FROM users WHERE email = '" + session['email'] + "'"
+	email = db.engine.execute(stmt).fetchone()[0]
+	stmt1 = 'SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.email = "' + session['email'] +'"'
+	products = db.engine.execute(stmt1).fetchall()
+	totalPrice = 0
+	for row in products:
+		totalPrice+=row[2]
+	return render_template("orders.html",loggedIn=loggedIn,noOfItems=noOfItems,name=name,totalPrice=totalPrice)
+
 @app.route("/checkout")
 def checkout():
 	if 'email' not in session:
 		return redirect(url_for('loginForm'))
 	loggedIn,name,noOfItems = getLoginDetails()
 	email = session['email']
-	stmt = "SELECT userId FROM users WHERE email = '" + email + "'"
-	userId = db.engine.execute(stmt).fetchone()[0]
-	stmt1 = "SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.userId = " + str(userId)
+	stmt = "SELECT email FROM users WHERE email = '" + str(session['email']) + "'"
+	email = db.engine.execute(stmt).fetchone()[0]
+	stmt1 = 'SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.email = "' + session['email'] +'"'
 	products = db.engine.execute(stmt1).fetchall()
 	totalPrice = 0
 	for row in products:
@@ -179,10 +206,10 @@ def removeFromCart():
 		return redirect(url_for('loginForm'))
 	email = session['email']
 	productId = str(request.args.get('productId'))
-	stmt = "SELECT userId FROM users WHERE email = '" + email + "'"
-	userId = db.engine.execute(stmt).fetchone()[0]
+	stmt = "SELECT email FROM users WHERE email = '" + str(session['email']) + "'"
+	email = db.engine.execute(stmt).fetchone()[0]
 	try:
-		stmt2 = 'DELETE FROM kart WHERE userId = ' + str(userId) + ' AND productId = "' + str(productId) + '"'
+		stmt2 = 'DELETE FROM kart WHERE email = "' + str(session['email']) + '" AND productId = "' + str(productId) + '"'
 		db.engine.execute(stmt2)
 		db.session.commit()
 		db.session.close()
