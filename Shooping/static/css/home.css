@@ -9,6 +9,8 @@
 	margin-left: 20px;
 	margin-right: 20px;
 	margin-bottom: 20px;
+	/*background-image: url("{{url_for('static', filename='images/header_1.jpg}}");*/
+	/*background-repeat: repeat-y;*/
 }
 
 table {

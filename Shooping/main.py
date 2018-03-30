@@ -2,12 +2,9 @@ from flask import *
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+app.secret_key="random string"
 app.config['SQLALCHEMY_DATABASE_URI']='sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=False
-app.secret_key = 'random string'
-UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 db = SQLAlchemy(app)
 
 class Users(db.Model):
@@ -55,7 +52,8 @@ db.create_all()
 
 class Kart(db.Model):
 	__tablename__='kart'
-	email = db.Column(db.String(255),db.ForeignKey('users.email'),primary_key=True)
+	id = db.Column(db.Integer(),primary_key=True)
+	email = db.Column(db.String(255),db.ForeignKey('users.email'))
 	productId = db.Column(db.String(255),db.ForeignKey('products.productId'))
 	quantity = db.Column(db.Integer())
 	def __init__(self,email,productId,quantity):
@@ -66,7 +64,8 @@ db.create_all()
 
 class Orders(db.Model):
 	__tablename__='orders'
-	email = db.Column(db.String(255),db.ForeignKey('users.email'),primary_key=True)
+	id = db.Column(db.Integer(),primary_key=True)
+	email = db.Column(db.String(255),db.ForeignKey('users.email'))
 	productId = db.Column(db.String(255),db.ForeignKey('products.productId'))
 	quantity = db.Column(db.Integer())
 	def __init__(self,email,productId,quantity):
@@ -122,8 +121,8 @@ def login():
 def productDescription():
 	loggedIn,name,noOfItems = getLoginDetails()
 	productId = request.args.get('productId')
-	stmt = 'select productId,name,price,description,image,author,publisher,publishedDate from products where productId = "'+str(productId)+'"'
-	print(productId)
+	stmt = 'SELECT productId,name,price,description,image,author,publisher,publishedDate FROM products WHERE productId = "'+str(productId)+'"'
+	# print(productId)
 	productData = db.engine.execute(stmt).fetchone()
 	return render_template("productDescription.html",data=productData,loggedIn=loggedIn,name=name,noOfItems=noOfItems)
 @app.route("/addToCart")
@@ -136,13 +135,19 @@ def addToCart():
 		email = db.engine.execute(stmt).fetchone()[0]
 		# stmt = 'SELECT count() FROM kart'
 		try:
-			count = db.engine.execute("SELECT quantity FROM kart WHERE email ='"+str(session['email'])+"' AND productId="+str(productId)).fetchone()[0]
+			count = db.engine.execute("SELECT quantity FROM kart WHERE email = '" + email +"'AND productId ='"+str(productId)+"'").fetchone()[0]
 			count+=1
-			if(count < 4):
+			# print("count--> "+str(count))
+			if(count <= 3):
 				try:
-					db.engine.execute("DELETE FROM kart WHERE email = '" + str(session['email']) + "' AND productId = " + str(productId))
-					user = Kart(email,productId,quantity)
+					db.engine.execute("DELETE FROM kart WHERE email = '" + email + "' AND productId = '" + str(productId) +"'")
+					db.session.commit()
+					# print("asdfghjasdfgh")
+					# print("after delete count--> "+str(count))
+					user = Kart(email,productId,count+1)
 					db.session.add(user)
+					# print("after update count--> "+str(count))
+					# print("123456789")
 					db.session.commit()
 					msg="Added successfully"
 				except:
@@ -151,6 +156,7 @@ def addToCart():
 		except:
 			quantity=1
 			user = Kart(email,productId,quantity)
+			# print("qwertyuiop")
 			db.session.add(user)
 			db.session.commit()
 			msg="Added successfully"
@@ -164,11 +170,11 @@ def cart():
 	email = session['email']
 	stmt = "SELECT email FROM users WHERE email = '" + str(session['email']) + "'"
 	email = db.engine.execute(stmt).fetchone()[0]
-	stmt1 = 'SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.email = "' + session['email'] +'"'
+	stmt1 = 'SELECT products.productId, products.name, products.price, products.image, kart.quantity FROM products, kart WHERE products.productId = kart.productId AND kart.email = "' + session['email'] +'"'
 	products = db.engine.execute(stmt1).fetchall()
 	totalPrice = 0
 	for row in products:
-		totalPrice+=row[2]
+		totalPrice+=row[2]*(row[4]-1)
 	return render_template("cart.html",products=products,totalPrice=totalPrice,loggedIn=loggedIn,name=name,noOfItems=noOfItems)
 
 @app.route("/orders")
@@ -179,12 +185,12 @@ def orders():
 	email = session['email']
 	stmt = "SELECT email FROM users WHERE email = '" + session['email'] + "'"
 	email = db.engine.execute(stmt).fetchone()[0]
-	stmt1 = 'SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.email = "' + session['email'] +'"'
+	stmt1 = 'SELECT products.productId, products.name, products.price, products.image, kart.quantity FROM products, kart WHERE products.productId = kart.productId AND kart.email = "' + session['email'] +'"'
 	products = db.engine.execute(stmt1).fetchall()
 	totalPrice = 0
 	for row in products:
-		totalPrice+=row[2]
-	return render_template("orders.html",loggedIn=loggedIn,noOfItems=noOfItems,name=name,totalPrice=totalPrice)
+		totalPrice+=row[2]*(row[4]-1)
+	return render_template("orders.html",products=products,totalPrice=totalPrice,loggedIn=loggedIn,name=name,noOfItems=noOfItems)
 
 @app.route("/checkout")
 def checkout():
@@ -194,11 +200,11 @@ def checkout():
 	email = session['email']
 	stmt = "SELECT email FROM users WHERE email = '" + str(session['email']) + "'"
 	email = db.engine.execute(stmt).fetchone()[0]
-	stmt1 = 'SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.email = "' + session['email'] +'"'
+	stmt1 = 'SELECT products.productId, products.name, products.price, products.image, kart.quantity FROM products, kart WHERE products.productId = kart.productId AND kart.email = "' + session['email'] +'"'
 	products = db.engine.execute(stmt1).fetchall()
 	totalPrice = 0
 	for row in products:
-		totalPrice+=row[2]
+		totalPrice+=row[2]*(row[4]-1)
 	return render_template("checkout.html",products=products,totalPrice=totalPrice,loggedIn=loggedIn,name=name,noOfItems=noOfItems)
 @app.route("/removeFromCart")
 def removeFromCart():

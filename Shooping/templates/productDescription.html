@@ -7,6 +7,9 @@
 </head>
 <body>
 <div id="title">
+	<a href="/">
+	<img id="logo" src= {{ url_for('static', filename='images/logo.png') }} />
+	</a>
 	<form>
 		<input id="searchBox" type="text" name="searchQuery">
 		<input id="searchButton" type="submit" value="Search">
@@ -28,7 +31,7 @@
 	{% endif %}
 	<div id="kart">
 		<a class="link" href="/cart">
-			<!-- <img src={{url_for('static', filename='images/shoppingCart.png')}} id="cartIcon" /> -->
+			<img src={{url_for('static', filename='images/shoppingCart.png')}} id="cartIcon" />
 			CART {{noOfItems}}
 		</a>
 	</div>
@@ -43,14 +46,26 @@
 
 	<div id="productDescription">
 		<h2>Details</h2>
-		<table id="descriptionTable">
+		<table id="descriptionTable" style="width: 400px;">
 			<tr>
-				<td>Name</td>
+				<td>Name:</td>
 				<td>{{data[1]}}</td>
 			</tr>
 			<tr>
-				<td>Price</td>
+				<td>Price:</td>
 				<td>${{data[2]}}</td>
+			</tr>
+			<tr>
+				<td>Author Name:</td>
+				<td>{{data[5]}}</td>
+			</tr>
+			<tr>
+				<td>Publisher Name:</td>
+				<td>{{data[6]}}</td>
+			</tr>
+			<tr>
+				<td>Published Date:</td>
+				<td>{{data[7]}}</td>
 			</tr>
 		</table>
 		<h2>Description</h2>
@@ -59,6 +74,10 @@
 	{% if data[2]!=0 %}
 	<div id="addToCart">
 		<a href="/addToCart?productId={{request.args.get('productId')}}">Add to Cart</a>
+	</div>
+	{% else %}
+	<div id="addToCart" style="color: blue;">
+		<u>Add to Cart</u>
 	</div>
 	{% endif %}
 </div>

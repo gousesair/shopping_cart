@@ -4,6 +4,13 @@
 <title>Admin</title>
 </head>
 <body>
+	<a href="/">
+	<img id="logo" src= {{ url_for('static', filename='images/logo.png') }} />
+	</a>
+	<form>
+		<input id="searchBox" type="text" name="searchQuery">
+		<input id="searchButton" type="submit" value="Search">
+	</form>
 <h2>Add items</h2>
 <form action="/addItem" method="POST" enctype="multipart/form-data">
 	Name: <input type="text" name="name"><br>

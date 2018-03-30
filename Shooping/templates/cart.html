@@ -30,7 +30,7 @@
 	{% endif %}
 	<div id="kart">
 		<a class="link" href="/cart">
-		<!-- <img src={{url_for('static', filename='images/shoppingCart.png')}} id="cartIcon" /> -->
+		<img src={{url_for('static', filename='images/shoppingCart.png')}} id="cartIcon" />
 		CART {{noOfItems}}
 		</a>
 	</div>
@@ -49,6 +49,9 @@
 			</div>
 			<div id="itemPrice">
 				${{row[2]}}
+			</div>
+			<div id="quant">
+				Quantity = {{row[4]}}
 			</div>
 		</div>
 		{% endfor %}
