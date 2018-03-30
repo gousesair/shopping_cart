@@ -12,7 +12,7 @@ db = SQLAlchemy(app)
 
 class Users(db.Model):
 	__tablename__='users'
-	userId = db.Column(db.Integer,primary_key=True)
+	id = db.Column(db.Integer,primary_key=True)
 	password = db.Column(db.String(255))
 	email = db.Column(db.String(255))
 	name = db.Column(db.String(255))
@@ -20,8 +20,8 @@ class Users(db.Model):
 	state = db.Column(db.String(255))
 	phone = db.Column(db.String(255))
 
-	def __init__(self,userId,password,email,name,address,state,phone):
-		self.userId=userId
+	def __init__(self,password,email,name,address,state,phone):
+		# self.userId=userId
 		self.password=password
 		self.email=email
 		self.name=name
@@ -132,14 +132,17 @@ def addToCart():
 		productId = str(request.args.get('productId'))
 		stmt = "SELECT userId FROM users WHERE email = '" + session['email'] + "'"
 		userId = db.engine.execute(stmt).fetchone()[0]
-		try:
-			user = Kart(userId,productId)
-			db.session.add(user)
-			db.session.commit()
-			msg="Added successfully"
-		except:
-			db.session.rollback()
-			msg = "Error ocuured"
+		# stmt = 'SELECT count() FROM kart'
+		# count = db.engine.execute(stmt).fetchone()[0]
+		# try:
+		# 	if count < 4:
+		user = Kart(userId,productId)
+		db.session.add(user)
+		db.session.commit()
+		msg="Added successfully"
+		# except:
+		# 	db.session.rollback()
+		# 	msg = "Can't add more than 3 books"
 	db.session.close()
 	return redirect(url_for('root'))
 @app.route("/cart")
